@@ -1,0 +1,677 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300..900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Rubik', sans-serif;
+}
+
+/* ===== VARIABLES ===== */
+:root {
+    --primary-color: #007bff;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --dark-color: #333;
+    --light-color: #f9f9f9;
+    --transition-speed: 0.3s;
+    --button-padding: 0.75rem 1.5rem;
+    --button-font-size: 15px;
+    --button-font-weight: 600;
+    --button-border-radius: 8px;
+    --button-shadow: 0 0 15px rgba(40, 167, 69, 0.4);
+    --font-size-small: 14px;
+    --font-size-medium: 16px;
+    --font-size-large: 18px;
+}
+
+/* ===== NAVBAR ===== */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--dark-color);
+    color: white;
+    padding: 0.56rem 2rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    position: relative;
+    z-index: 100;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity var(--transition-speed);
+}
+
+.logo:hover {
+    opacity: 0.9;
+}
+
+.logo a {
+    text-decoration: none;
+    color: white;
+    font-weight: 500;
+}
+
+.logo img {
+    width: 30px;
+    height: auto;
+    padding: 2px;
+}
+
+/* ===== TELEMETRY STATUS ===== */
+#telemetry-status {
+    display: inline-block;
+    padding: 0.5rem 1.5rem;
+    font-weight: 600;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.4); 
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-speed) ease-in-out;
+    animation: rainbow 3s linear infinite;
+}
+
+#telemetry-status.disconnected {
+    background-color: var(--danger-color); 
+    box-shadow: 0 0 15px rgba(220, 53, 69, 0.4); 
+    animation: glow-red 2s infinite alternate;
+}
+
+#telemetry-status.connected {
+    background-color: var(--success-color); 
+    box-shadow: 0 0 15px rgba(40, 167, 69, 0.4); 
+    animation: glow-green 2s infinite alternate;
+}
+
+#telemetry-status.error {
+    background-color: var(--warning-color); 
+    box-shadow: 0 0 15px rgba(255, 193, 7, 0.4); 
+    animation: glow-orange 2s infinite alternate;
+}
+
+.telemetry-status:hover {
+    transform: translateY(-1px);
+}
+
+.telemetry-status.connected:hover {
+    background-color: #218838;
+}
+
+.telemetry-status.disconnected:hover {
+    background-color: #c82333;
+}
+
+.telemetry-status.error:hover {
+    background-color: #e0a800;
+}
+
+/* Glow Animations */
+@keyframes rainbow {
+    0% { background-color: red; }
+    14% { background-color: orange; }
+    28% { background-color: yellow; }
+    42% { background-color: green; }
+    57% { background-color: blue; }
+    71% { background-color: indigo; }
+    85% { background-color: violet; }
+    100% { background-color: red; }
+}
+
+@keyframes glow-green {
+    0% { box-shadow: 0 0 15px rgba(40, 167, 69, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(40, 167, 69, 0.6); }
+    100% { box-shadow: 0 0 15px rgba(40, 167, 69, 0.4); }
+}
+
+@keyframes glow-red {
+    0% { box-shadow: 0 0 15px rgba(220, 53, 69, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(220, 53, 69, 0.6); }
+    100% { box-shadow: 0 0 15px rgba(220, 53, 69, 0.4); }
+}
+
+@keyframes glow-orange {
+    0% { box-shadow: 0 0 15px rgba(255, 193, 7, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(255, 193, 7, 0.6); }
+    100% { box-shadow: 0 0 15px rgba(255, 193, 7, 0.4); }
+}
+
+/* ===== CONTAINER ===== */
+.container {
+    display: flex;
+    min-height: calc(100vh - 64px);
+    transition: all var(--transition-speed);
+}
+
+/* ===== LEFT PANEL ===== */
+.left {
+    width: 25%;
+    background-color: #ececec;
+    color: var(--dark-color);
+    height: calc(100vh - 64px);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch; /* Ensures children fill available width */
+    gap: 1.5rem;
+    padding: 1.5rem 1rem;
+    font-weight: 500;
+    overflow-y: auto;
+    font-size: 14px;
+    transition: all var(--transition-speed);
+}
+
+/* Scrollbar styling */
+.left::-webkit-scrollbar {
+    width: 8px;
+}
+
+.left::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.left::-webkit-scrollbar-thumb {
+    background-color: #bbb;
+    border-radius: 4px;
+    transition: background-color var(--transition-speed);
+}
+
+.left::-webkit-scrollbar-thumb:hover {
+    background-color: #999;
+}
+
+/* ===== COMMAND FORM ===== */
+.command-form {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    transition: transform var(--transition-speed);
+}
+
+.command-form-header{
+    font-size: var(--font-size-large);
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: var(--dark-color);
+}
+
+.command-form:hover {
+    transform: translateY(-2px);
+}
+
+.command-line {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.command-line label {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.command-line select {
+    flex-grow: 1;
+    padding: 0.75rem;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+    background-color: var(--light-color);
+    cursor: pointer;
+    transition: border-color var(--transition-speed);
+}
+
+.command-line select:focus {
+    border-color: var(--primary-color);
+}
+
+.command-line button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+}
+
+.command-line button:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+/* ===== SERIAL FORM ===== */
+.serial-form {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    transition: transform var(--transition-speed);
+}
+
+.serial-form h2 {
+    padding-bottom: 0.75rem;
+}
+
+.serial-form:hover {
+    transform: translateY(-2px);
+}
+
+.serial-form-buttons {
+    display: inline-flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.serial-form select,
+.serial-form button {
+    width: 100%;
+    margin: 0.5rem 0;
+    padding: var(--button-padding);
+    border: 2px solid #eee;
+    border-radius: var(--button-border-radius);
+    font-size: var(--button-font-size);
+    transition: all var(--transition-speed);
+}
+
+.serial-form select:disabled,
+.serial-form button:disabled {
+    cursor: not-allowed;
+    background-color: #f5f5f5;
+    opacity: 0.5;
+}
+
+#telemetry-connect-btn {
+    background-color: var(--success-color);
+    color: white;
+    font-weight: var(--button-font-weight);
+    border: none;
+    padding: var(--button-padding);
+    border-radius: var(--button-border-radius);
+    box-shadow: var(--button-shadow);
+    transition: all var(--transition-speed);
+}
+
+#telemetry-connect-btn.active,
+#telemetry-connect-btn:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+#telemetry-disconnect-btn {
+    background-color: var(--danger-color);
+    color: white;
+    font-weight: var(--button-font-weight);
+    opacity: 0.7;
+    border: none;
+    padding: var(--button-padding);
+    border-radius: var(--button-border-radius);
+    transition: all var(--transition-speed);
+}
+
+#telemetry-disconnect-btn.active {
+    cursor: pointer;
+    opacity: 1;
+}
+
+#telemetry-disconnect-btn.active:hover {
+    background-color: #bd2130;
+    transform: translateY(-1px);
+}
+
+#telemetry-connect-btn:hover,
+#telemetry-disconnect-btn:hover {
+    cursor: pointer;
+    transform: translateY(-1px);
+}
+
+#telemetry-connect-btn:disabled,
+#telemetry-disconnect-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ===== DATA OVERVIEW BOX ===== */
+.data-overview-box {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    transition: transform var(--transition-speed);
+}
+
+.data-overview-box:hover {
+    transform: translateY(-2px);
+}
+
+.data-overview-title {
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: var(--dark-color);
+}
+
+.data-overview {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    justify-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 1.5rem;
+}
+
+/* Data Card */
+.data-card {
+    background: #f9f9f9;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+    /* Removed margin: 0 auto; to avoid unwanted centering */
+    margin: 0;
+}
+
+.data-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.data-label {
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 0.75rem;
+}
+
+.data-value {
+    font-size: var(--font-size-large);
+    font-weight: 700;
+}
+
+.data-unit {
+    font-size: var(--font-size-small);
+    color: gray;
+}
+
+.normal {
+    color: var(--success-color);
+}
+
+.warning {
+    color: #ffcc00;
+}
+
+.critical {
+    color: var(--danger-color);
+}
+
+/* ===== RIGHT PANEL ===== */
+.right {
+    width: 75%;
+    background-color: var(--light-color);
+    height: calc(100vh - 64px);
+    padding: 1.5rem; 
+    overflow-y: auto;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--dark-color);
+    flex: 1;
+    transition: all var(--transition-speed);
+}
+
+/* ===== CONTAINERS (MAPS & GRAPHS) ===== */
+.first-container{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    width: 100%;
+    padding: 1rem;
+    height: 40vh;
+    min-height: 300px;
+    border-radius: 12px;
+    background-color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: var(--transition-speed);
+}
+
+.second-container, .third-container{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    width: 100%;
+    padding: 1rem;
+    height: 40vh;
+    min-height: 300px;
+    margin-top: 1.5rem;
+    border-radius: 12px;
+    background-color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: var(--transition-speed);
+}
+
+
+/* ===== INNER CONTAINERS (MAPS & GRAPHS) ===== */
+#cesiumContainer, #leafletMap, .graph1, .graph2, .graph3 {
+    flex: 1;
+    min-width: 250px;
+    width: 50%;
+    height: 100%;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* ===== GRAPH INNER DIVS (FULL SIZE INSIDE PARENT) ===== */
+#lidar-lite-v3-graph, #spectrometer-graph, #spectrometer-voltage-graph {
+    width: 100%;
+    height: 100%;
+}
+
+/* ===== RESPONSIVE STYLES ===== */
+
+/* Large tablets and small desktops */
+@media (max-width: 1200px) {
+    .data-overview {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .serial-form, .command-form, .data-overview-box {
+        max-width: 100%;
+    }
+}
+
+/* Tablets and small laptops */
+@media (max-width: 992px) {
+    .navbar {
+        padding: 0.5rem 1rem;
+    }
+    
+    .container {
+        flex-direction: column;
+    }
+    
+    .left, .right {
+        width: 100%;
+        height: auto;
+    }
+    
+    .left {
+        max-height: none;
+        padding: 1rem;
+    }
+    
+    .right {
+        height: auto;
+        min-height: 60vh;
+    }
+    
+    .first-container, .second-container {
+        height: auto;
+        min-height: 400px;
+    }
+    
+    #cesiumContainer, #leafletMap, .graph1, .graph2, .graph3 {
+        min-height: 350px;
+    }
+}
+
+/* Large phones and tablets */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 0.5rem;
+    }
+    
+    .logo {
+        gap: 0.5rem;
+    }
+    
+    #telemetry-status {
+        padding: 0.4rem 1rem;
+        font-size: 14px;
+    }
+    
+    .command-line {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .command-line select, 
+    .command-line button {
+        width: 100%;
+    }
+    
+    .data-overview {
+        grid-template-columns: 1fr;
+    }
+    
+    .first-container, .second-container {
+        flex-direction: column;
+        height: auto;
+        padding: 0.75rem;
+    }
+    
+    #cesiumContainer, #leafletMap, .graph1, .graph2, .graph3 {
+        width: 100%;
+        height: 300px;
+        margin-bottom: 1rem;
+    }
+    
+    .serial-form-buttons {
+        flex-direction: column;
+    }
+}
+
+/* Small phones */
+@media (max-width: 576px) {
+    .navbar {
+        padding: 0.3rem 0.5rem;
+    }
+    
+    .logo a {
+        font-size: 14px;
+    }
+    
+    .logo img {
+        width: 24px;
+    }
+    
+    #telemetry-status {
+        font-size: 12px;
+        padding: 0.3rem 0.75rem;
+    }
+    
+    .left, .right {
+        padding: 0.75rem;
+    }
+    
+    .command-form, .serial-form, .data-overview-box {
+        padding: 1rem;
+    }
+    
+    .command-form h2, .serial-form h2, .data-overview-title {
+        font-size: 16px;
+    }
+    
+    .command-line label {
+        font-size: 14px;
+    }
+    
+    .command-line select, 
+    .command-line button, 
+    .serial-form select, 
+    .serial-form button {
+        padding: 0.5rem 1rem;
+        font-size: 13px;
+    }
+    
+    .first-container, .second-container {
+        padding: 0.5rem;
+        gap: 0.5rem;
+    }
+    
+    #cesiumContainer, #leafletMap, .graph1, .graph2, .graph3 {
+        height: 250px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .data-card {
+        padding: 1rem;
+    }
+    
+    .data-label {
+        font-size: 12px;
+    }
+    
+    .data-value {
+        font-size: 16px;
+    }
+    
+    .data-unit {
+        font-size: 11px;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 375px) {
+    .navbar {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
+    
+    #telemetry-status {
+        width: 100%;
+    }
+    
+    .left, .right {
+        padding: 0.5rem;
+    }
+    
+    .command-form, .serial-form, .data-overview-box {
+        padding: 0.75rem;
+    }
+    
+    #cesiumContainer, #leafletMap, .graph1, .graph2, .graph3{
+        height: 200px;
+    }
+}

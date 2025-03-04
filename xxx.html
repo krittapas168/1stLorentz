@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium 3D Map - Huntsville</title>
+
+    <!-- CesiumJS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/cesium@1.103.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/cesium@1.103.0/Build/Cesium/Cesium.js"></script>
+
+    <style>
+        /* Set the height of the map container */
+        #cesiumContainer {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="cesiumContainer"></div>
+
+    <script>
+        // Set your Cesium Ion access token
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4MWU0ZjM0MC1hNWZkLTQzZjUtYTgzYi01NWU5MmViZWFiNzMiLCJpZCI6Mjc2MDgwLCJpYXQiOjE3Mzk1NDczMzN9.t2-HuCAaGdp9KF_ywzTEYRoXOC0HfwHdVI7OHSJD7vE'; // Replace with your token
+
+        // Initialize the Cesium Viewer
+        const viewer = new Cesium.Viewer('cesiumContainer', {
+            imageryProviderViewModels: Cesium.createDefaultImageryProviderViewModels(),
+            terrainProviderViewModels: Cesium.createDefaultTerrainProviderViewModels(),
+            terrainProvider: Cesium.createWorldTerrain()
+        });
+
+        // Coordinates for the U.S. Space & Rocket Center in Huntsville, AL, USA
+        const latitude = 34.71127765;
+        const longitude = -86.64116573;
+        const altitude = 500; // Altitude in meters
+
+        // Set camera to view the location of the U.S. Space & Rocket Center
+        viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, altitude)
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lorentz - GCS</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/rover.webp') }}">
+    <link href="https://cdn.jsdelivr.net/npm/cesium@1.103.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <script src="https://cdn.jsdelivr.net/npm/cesium@1.103.0/Build/Cesium/Cesium.js" defer></script> 
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js" defer></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js" defer></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js" defer></script>
+
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</head>
+
+<body>
+    <!-- N a v b a r -->
+    <nav class="navbar">
+        <div class="logo">
+            <a href="/" class="logo">
+                <img src="{{ url_for('static', filename='img/rover.webp') }}" alt="">
+                Lorentz Ground Control Station
+            </a>
+        </div>
+        <div id="telemetry-status">
+            Loading...  
+        </div>
+    </nav>
+    <!-- M a i n  -->
+    <main>
+        <div class="container">
+            <div class="left">
+
+                <div class="command-form">
+                    <div class="command-header">
+                        <h2>Command</h2>
+                    </div>
+                    <div class="command-line">
+                        <label for="rover-command">Send:</label>
+                        <select id="rover-command">
+                            <option value="777">Lidar LiteV3 Activated</option>
+                            <option value="888">Spectrometer Activated</option>
+                            <option value="999">Don't know either</option>
+                        </select>
+                        <button id="send-command">Send</button>
+                    </div>
+                </div>
+
+                <div class="data-overview-box">
+                    <div class="data-overview-title">
+                        <h2>Telemetry Data</h2>
+                    </div>
+                    <div class="data-overview">
+                        <div class="data-card">
+                            <div class="data-label">Timestamp</div>
+                            <div class="data-value" id="timestamp">N/A <span class="data-unit"></span></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-label">Packet Counter</div>
+                            <div class="data-value" id="packet-counter">N/A <span class="data-unit"></span></div>
+                        </div>
+                        <div class="data-card" >
+                            <div class="data-label">LidarLite V3</div>
+                            <div class="data-value" id="lidar-lite-v3" >N/A <span class="data-unit">cm</span>
+                            </div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-label">Spectrometer Voltage</div>
+                            <div class="data-value" id="spectrometer-voltage">N/A <span class="data-unit">V</span></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-label">Latitude</div>
+                            <div class="data-value" id="latitude">N/A <span class="data-unit">°</span></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-label">Longitude</div>
+                            <div class="data-value" id="longitude">N/A <span class="data-unit">°</span></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-label">Altitute</div>
+                            <div class="data-value" id="altitude">N/A <span class="data-unit">m</span></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-label">Accerelometer (X)</div>
+                            <div class="data-value" id="accelerometer-x">N/A <span class="data-unit">m/s2</span></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-label">Accerelometer (Y)</div>
+                            <div class="data-value" id="accelerometer-y">N/A <span class="data-unit">m/s2</span></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-label">Accerelometer (Z)</div>
+                            <div class="data-value" id="accelerometer-z">N/A <span class="data-unit">m/s2</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="serial-form">
+                    <h2>Serial Connection</h2>
+                    <label for="serial-port">Port:</label>
+                    <select id="serial-port">
+                        <option value="">Loading...</option>
+                        <!-- Options -->
+                    </select>
+                    <label for="serial-baud">Baud Rate:</label>
+                    <select id="serial-baud">
+                        <option value="">Loading...</option>
+                        <!-- Options -->
+                    </select>
+                    <div class="serial-form-buttons">
+                        <button id="telemetry-connect-btn">Connect</button>
+                        <button id="telemetry-disconnect-btn">Disconnect</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="right">
+                <div class="first-container">
+                    <div id="cesiumContainer"></div>
+                    <div id="leafletMap"></div>
+                </div>
+
+                <div class="second-container">
+                    <div class="graph1">
+                        <div id="lidar-lite-v3-graph"></div>
+                    </div>
+                    <div class="graph2">
+                        <div id="spectrometer-voltage-graph"></div>
+                    </div>
+                <div class="third-container">
+                    <div class="graph3">
+                        <div id="spectrometer-graph"></div>
+                    </div>
+                    <div class="graph4">
+                        <div id="accelerometer-graph"></div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+
+</html>

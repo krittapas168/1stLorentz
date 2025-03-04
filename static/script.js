@@ -287,11 +287,10 @@ window.onload = function () {
   }
 
   const lidarGraphDiv = document.getElementById('lidar-lite-v3-graph');
-  const maxDataPoints = 100;
   let lidarData = {
-    x: [], // Elapsed time (index-based for smooth plotting)
-    y: [], // Distance values
-    timestamps: [], // Store actual timestamps for tooltip display
+    x: [],
+    y: [],
+    timestamps: [],
     startTime: null,
     trace: {
       x: [],
@@ -299,12 +298,12 @@ window.onload = function () {
       mode: 'lines+markers',
       name: 'Lidar Lite V3 Distance',
       line: { color: '#80CAF6' },
-      text: [], // Text for tooltip
-      hoverinfo: 'text' // Display text on hover
+      text: [],
+      hoverinfo: 'text'
     },
     layout: {
       title: 'Lidar-Lite-V3',
-      xaxis: { title: 'Time (seconds)' },
+      xaxis: { title: 'Time (seconds)', range: [0, 10] },
       yaxis: { title: 'Distance (cm)' },
       margin: { t: 50, b: 70, l: 70, r: 50 },
       font: { family: "Rubik, sans-serif" },
@@ -329,66 +328,62 @@ window.onload = function () {
     }
 
     let elapsedTime = (time - lidarData.startTime) / 1000;
-
     lidarData.x.push(elapsedTime);
     lidarData.y.push(distance);
-    lidarData.timestamps.push(time.toLocaleTimeString("en-GB")); // Store formatted timestamp
 
-    if (lidarData.x.length > maxDataPoints) {
-      lidarData.x.shift();
-      lidarData.y.shift();
-      lidarData.timestamps.shift();
-    }
+    let minX = Math.max(0, elapsedTime - 10);
+    let maxX = minX + 10;
+    lidarData.layout.xaxis.range = [minX, maxX];
 
-    // Update trace with text tooltip
-    lidarData.trace.x = [...lidarData.x];
-    lidarData.trace.y = [...lidarData.y];
-    lidarData.trace.text = lidarData.timestamps.map((t, i) => `Time: ${t}<br>Distance: ${lidarData.y[i]} cm`);
+    lidarData.trace.x = lidarData.x;
+    lidarData.trace.y = lidarData.y;
+    lidarData.trace.text = lidarData.x.map((t, i) => `Time: ${t.toFixed(2)}s<br>Distance: ${lidarData.y[i]} cm`);
 
-    Plotly.react(lidarGraphDiv, [lidarData.trace], lidarData.layout);
+    Plotly.react(lidarGraphDiv, [lidarData.trace], lidarData.layout, lidarData.config);
   }
 
   const spectrometerGraphDiv = document.getElementById('spectrometer-graph');
-  const maxSpectrometerDataPoints = 100;
-
   let spectrometerData = {
-    traces: {},  // Store spectrometer traces dynamically
+    traces: {},
     layout: {
       title: 'C12880MA',
-      xaxis: { title: 'Time (seconds)' },
+      xaxis: { title: 'Time (seconds)', range: [0, 10] },
       yaxis: { title: 'Wavelength (nm)' },
       margin: { t: 50, b: 70, l: 70, r: 50 },
+      pad: 40,
       font: { family: "Rubik, sans-serif" },
-      showlegend: true
+      showlegend: true,
+      annotations: [] // Added for voltage display
     },
     config: { responsive: true },
     startTime: null
   };
-
+  
   function updateSpectrometerGraph(timestamp, telemetryData) {
-    if (!timestamp || !telemetryData.spectrometer) return;
-
+    if (!timestamp || !telemetryData.spectrometer || telemetryData['spectrometer-voltage'] === undefined) return;
+  
     let time = new Date(timestamp);
     if (isNaN(time.getTime())) {
       console.error("Invalid timestamp:", timestamp);
       return;
     }
-
+  
     if (spectrometerData.startTime === null) {
       spectrometerData.startTime = time;
     }
-
+  
     let elapsedTime = (time - spectrometerData.startTime) / 1000;
+    let formattedTime = time.toLocaleTimeString("en-GB");
     let spectrometerValues = telemetryData.spectrometer;
-
+    let spectrometerVoltage = telemetryData['spectrometer-voltage'];
+  
     Object.keys(spectrometerValues).forEach((key) => {
-      let voltage = spectrometerValues[key];
-
+      let wavelength = spectrometerValues[key];
+  
       if (!spectrometerData.traces[key]) {
         spectrometerData.traces[key] = {
           x: [],
           y: [],
-          timestamps: [],
           trace: {
             x: [],
             y: [],
@@ -400,47 +395,57 @@ window.onload = function () {
           }
         };
       }
-
+  
       let trace = spectrometerData.traces[key];
       trace.x.push(elapsedTime);
-      trace.y.push(voltage);
-      trace.timestamps.push(time.toLocaleTimeString("en-GB"));
-
-      if (trace.x.length > maxSpectrometerDataPoints) {
-        trace.x.shift();
-        trace.y.shift();
-        trace.timestamps.shift();
-      }
-
-      trace.trace.x = [...trace.x];
-      trace.trace.y = [...trace.y];
-      trace.trace.text = trace.timestamps.map((t, i) => `Time: ${t}<br>Voltage: ${trace.y[i]} V`);
+      trace.y.push(wavelength);
+  
+      let minX = Math.max(0, elapsedTime - 10);
+      let maxX = minX + 10;
+      spectrometerData.layout.xaxis.range = [minX, maxX];
+  
+      trace.trace.x = trace.x;
+      trace.trace.y = trace.y;
+      trace.trace.text = trace.x.map((t, i) => `Time: ${formattedTime}<br>Wavelength: ${trace.y[i]} nm<br>Voltage: ${spectrometerVoltage} V`);
     });
-
+  
+    // **Update the voltage annotation on the top-right**
+    spectrometerData.layout.annotations = [
+      {
+        xref: 'paper',
+        yref: 'paper',
+        x: 1,
+        y: 1.1, // Adjust the position
+        xanchor: 'right',
+        yanchor: 'top',
+        text: `Spectrometer Voltage: ${spectrometerVoltage} V`,
+        showarrow: false,
+        font: { size: 18, color: 'red' }
+      }
+    ];
+  
     let tracesArray = Object.values(spectrometerData.traces).map(data => data.trace);
     Plotly.react(spectrometerGraphDiv, tracesArray, spectrometerData.layout, spectrometerData.config);
   }
+  
 
-  // Initialize the empty plot
   Plotly.newPlot(spectrometerGraphDiv, [], spectrometerData.layout, spectrometerData.config);
 
   const spectrometerVoltageGraphDiv = document.getElementById('spectrometer-voltage-graph');
-  const maxSpectrometerVoltageDataPoints = 100;
-  
   let spectrometerVoltageData = {
-      x: [],
-      y: [],
-      layout: {
-          title: 'Spectrometer Voltage',
-          xaxis: { title: 'Time (seconds)' },
-          yaxis: { title: 'Voltage (V)' },
-          margin: { t: 50, b: 70, l: 70, r: 50 },
-          font: { family: "Rubik, sans-serif" }
-      },
-      config: { responsive: true },
-      startTime: null
+    x: [],
+    y: [],
+    layout: {
+      title: 'Spectrometer Voltage',
+      xaxis: { title: 'Time (seconds)', range: [0, 10] },
+      yaxis: { title: 'Voltage (V)' },
+      margin: { t: 50, b: 70, l: 70, r: 50 },
+      font: { family: "Rubik, sans-serif" }
+    },
+    config: { responsive: true },
+    startTime: null
   };
-  
+
   function updateSpectrometerVoltageGraph(timestamp, telemetryData) {
       if (!timestamp || !telemetryData['spectrometer-voltage']) return;
   
@@ -459,28 +464,28 @@ window.onload = function () {
   
       spectrometerVoltageData.x.push(elapsedTime);
       spectrometerVoltageData.y.push(voltage);
-  
-      if (spectrometerVoltageData.x.length > maxSpectrometerVoltageDataPoints) {
-          spectrometerVoltageData.x.shift();
-          spectrometerVoltageData.y.shift();
-      }
-  
-      Plotly.react(spectrometerVoltageGraphDiv, [{
-          x: spectrometerVoltageData.x,
-          y: spectrometerVoltageData.y,
-          mode: 'lines+markers',
-          name: 'Spectrometer Voltage',
-          line: { width: 2 },
-          text: spectrometerVoltageData.x.map((t, i) => `Time: ${t}s<br>Voltage: ${spectrometerVoltageData.y[i]} V`),
-          hoverinfo: 'text'
-      }], spectrometerVoltageData.layout, spectrometerVoltageData.config);
+
+    let minX = Math.max(0, elapsedTime - 10);
+    let maxX = minX + 10;
+    spectrometerVoltageData.layout.xaxis.range = [minX, maxX];
+
+    Plotly.react(spectrometerVoltageGraphDiv, [{
+      x: spectrometerVoltageData.x,
+      y: spectrometerVoltageData.y,
+      mode: 'lines+markers',
+      name: 'Spectrometer Voltage',
+      line: { width: 2 },
+      text: spectrometerVoltageData.x.map((t, i) => `Time: ${t.toFixed(2)}s<br>Voltage: ${spectrometerVoltageData.y[i]}V`),
+      hoverinfo: 'text'
+    }], spectrometerVoltageData.layout, spectrometerVoltageData.config);
   }
-  
-  // Initialize the empty plot
+
   Plotly.newPlot(spectrometerVoltageGraphDiv, [], spectrometerVoltageData.layout, spectrometerVoltageData.config);
-  
-  // Example telemetry event handler
-  socket.on('telemetry_data', (data) => {
-      updateSpectrometerVoltageGraph(data.timestamp, data);
-  });
-};
+
+  window.addEventListener('resize', function() {
+    Plotly.relayout('lidar-lite-v3-graph', { autosize: true });
+    Plotly.relayout('spectrometer-voltage-graph', { autosize: true });
+    Plotly.relayout('spectrometer-graph', { autosize: true });
+});
+
+}  

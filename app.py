@@ -69,14 +69,14 @@ def connect_serial(data):
             _thread_serial = ThreadSerial(parser=_parser, reader=_SerialReader, queue=_queue, socketio=socketio)
             _thread_serial.start()
 
-            # Start telemetry broadcasting
-            _telemetry_broadcaster = TelemetryBroadcaster(queue=_queue, socketio=socketio)
-            _telemetry_broadcaster.start()
-
             # Start file writing
             file_writer = FileWriter(folder_name='telemetry_logs', save_name='telemetry')
             _thread_file_writer = ThreadFileWriter(file_writer, _queue)
             _thread_file_writer.start()
+
+            # Start telemetry broadcasting
+            _telemetry_broadcaster = TelemetryBroadcaster(queue=_queue, socketio=socketio)
+            _telemetry_broadcaster.start()
 
             socketio.emit('serial_connected', {'status': True, 'message': f'Connected to {port} @ {baud} baud'})
         else:

@@ -9,5 +9,5 @@ rx_data_format = {
     "accelerometer-x": 1,
     "accelerometer-y": 1,
     "accelerometer-z": 1,
-    "spectrometer": 7
+    "spectrometer": 5
 }

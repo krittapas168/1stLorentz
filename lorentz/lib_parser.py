@@ -81,9 +81,6 @@ class Parser:
     def __parse_delim_only(self, __data: str):
         data_cleaned = self.__remove_consecutive_delimiter(__data)
         data_list = data_cleaned.split(self.__delimiter)
-
-        if len(data_list) != self.__total_length:
-            self.__logger.error('Data length ERROR')
         
         data_dict = {}
         index = 0

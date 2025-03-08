@@ -13,13 +13,13 @@ class ThreadSerial(ThreadBase):
                  parser: Parser,
                  reader: SerialReader,
                  queue: Queue,
-                 socketio: SocketIO,  # Add Flask-SocketIO instance
+                 socketio: SocketIO, 
                  interval: float = 0.500,
                  timeout: float = 4.000):
         self.__parser = parser
         self.__reader = reader
         self.__queue = queue
-        self.__socketio = socketio  # Store socketio instance
+        self.__socketio = socketio  
         self.__interval = interval
         self.__logger =  Logger('THREAD_SERIAL')
 
@@ -32,14 +32,14 @@ class ThreadSerial(ThreadBase):
             if self.__reader.available():
                 msg = self.__reader.get_message()
                 print(msg)  # Debugging
+                print()
                 if len(msg) > 0:
                     parsed_msg = self.__parser.parse(msg)
                     self.__queue.push(parsed_msg)
-                    self.send_to_frontend(parsed_msg)  # Send to frontend
+                    self.send_to_frontend(parsed_msg)  
 
             time.sleep(self.__interval)
 
-        # Clear remaining data from the queue
         self.__reader.read()
         while self.__reader.available():
             msg = self.__reader.get_message()

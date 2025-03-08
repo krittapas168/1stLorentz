@@ -6,8 +6,6 @@ rx_data_format = {
     "latitude": 1,
     "longitude": 1,
     "altitude": 1,
-    "accelerometer-x": 1,
-    "accelerometer-y": 1,
-    "accelerometer-z": 1,
-    "spectrometer": 5
+    "accelerometer": 1,
+    "spectrometer": 6
 }

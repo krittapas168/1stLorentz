@@ -10,7 +10,7 @@ window.onload = function () {
 
   // --- Initialize the page ---
   initializePage();
-  
+
   // --- Event Listeners ---
   if (connectBtn && disconnectBtn) {
     connectBtn.addEventListener('click', handleConnect);
@@ -42,6 +42,7 @@ window.onload = function () {
     updateLidarGraph(data.timestamp, data["lidar-lite-v3"]);
     updateSpectrometerGraph(data.timestamp, data);
     updateSpectrometerVoltageGraph(data.timestamp, data);
+    updateAccelerometerGraph(data.timestamp, data)
 
     updatePosition(data.longitude, data.latitude, data.altitude);
   });
@@ -245,9 +246,7 @@ window.onload = function () {
     "latitude": { unit: '°', ranges: { normal: [-45, Infinity], warning: [45, 70], critical: [70, 90] } },
     "longitude": { unit: '°', ranges: { normal: [-90, Infinity], warning: [90, 135], critical: [135, 180] } },
     "altitude": { unit: 'm', ranges: { normal: [0, Infinity], warning: [1000, 5000], critical: [5000, 10000] } },
-    "accelerometer-x": { unit: 'm/s²', ranges: { normal: [-10, Infinity], warning: [10, 20], critical: [20, 100] } },
-    "accelerometer-y": { unit: 'm/s²', ranges: { normal: [-10, Infinity], warning: [10, 20], critical: [20, 100] } },
-    "accelerometer-z": { unit: 'm/s²', ranges: { normal: [-10, Infinity], warning: [10, 20], critical: [20, 100] } }
+    "accelerometer": { unit: 'm/s²', ranges: { normal: [-10, Infinity], warning: [10, 20], critical: [20, 100] } },
   };
 
   // Determine a status class based on telemetry value
@@ -297,71 +296,69 @@ window.onload = function () {
   let homelat = 34.711278;
   let homelon = -86.641166;
 
-const viewer = new Cesium.Viewer('cesiumContainer', {
-  animation: false,
-  timeline: false,
-  terrainProvider: Cesium.createWorldTerrain(),
-  sceneMode: Cesium.SceneMode.SCENE3D,
-  homeButton: false,
-});
-
-let positions = [];
-let entity = viewer.entities.add({
-  id: "Rover",
-  position: Cesium.Cartesian3.fromDegrees(homelon, homelat, 100),
-  point: { pixelSize: 7, color: Cesium.Color.RED },
-});
-
-// Leaflet Map Setup
-var tileLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', { attribution: false });
-var map = L.map('leafletMap', {
-  zoomControl: true,
-  layers: [tileLayer],
-  maxZoom: 18,
-  minZoom: 6
-}).setView([homelat, homelon], 16);
-
-// Ensure the map size is updated
-setTimeout(() => { map.invalidateSize(); }, 800);
-
-// Create the Leaflet marker once
-let leafletMarker = L.marker([homelat, homelon]).addTo(map);
-
-// Function to update position in both Cesium and Leaflet
-function updatePosition(lon, lat, alt) {
-  if (isNaN(lon) || isNaN(lat)) {
-    console.error('Invalid coordinates received:', { lon, lat, alt });
-    return;
-  }
-  alt = isNaN(alt) ? 100 : alt; // Default altitude if not provided
-
-  // Update Cesium position
-  let newPosition = Cesium.Cartesian3.fromDegrees(lon, lat, alt);
-  entity.position.setValue(newPosition);
-
-  positions.push(newPosition); // Store the position for the path
-
-  // Update the rover path in Cesium
-  viewer.entities.removeById('roverPath');
-  viewer.entities.add({
-    id: 'roverPath',
-    polyline: {
-      positions: positions,
-      width: 2,
-      material: Cesium.Color.YELLOW,
-    },
+  const viewer = new Cesium.Viewer('cesiumContainer', {
+    animation: false,
+    timeline: false,
+    terrainProvider: Cesium.createWorldTerrain(),
+    sceneMode: Cesium.SceneMode.SCENE3D,
+    homeButton: false,
   });
 
-  // Update the Leaflet marker position
-  leafletMarker.setLatLng([lat, lon]); // Update the existing marker's position
-  map.setView([lat, lon]); // Adjust Leaflet map view to the new position
+  let positions = [];
+  let entity = viewer.entities.add({
+    id: "Rover",
+    position: Cesium.Cartesian3.fromDegrees(homelon, homelat, 100),
+    point: { pixelSize: 7, color: Cesium.Color.RED },
+  });
+
+  // Leaflet Map Setup
+  var tileLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', { attribution: false });
+  var map = L.map('leafletMap', {
+    zoomControl: true,
+    layers: [tileLayer],
+    maxZoom: 18,
+    minZoom: 6
+  }).setView([homelat, homelon], 16);
+
+  // Ensure the map size is updated
+  setTimeout(() => { map.invalidateSize(); }, 800);
+
+  // Create the Leaflet marker once
+  let leafletMarker = L.marker([homelat, homelon]).addTo(map);
+
+  // Function to update position in both Cesium and Leaflet
+  function updatePosition(lon, lat, alt) {
+    if (isNaN(lon) || isNaN(lat)) {
+        console.error('Invalid coordinates received:', { lon, lat, alt });
+        return;
+    }
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+        console.error('Out of bounds coordinates received:', { lon, lat, alt });
+        return;
+    }
+    alt = isNaN(alt) ? 100 : alt; // Default altitude if not provided
+
+    // Update Cesium position
+    let newPosition = Cesium.Cartesian3.fromDegrees(lon, lat, alt);
+    entity.position.setValue(newPosition);
+
+    positions.push(newPosition); // Store the position for the path
+
+    // Update the rover path in Cesium
+    viewer.entities.removeById('roverPath');
+    viewer.entities.add({
+        id: 'roverPath',
+        polyline: {
+            positions: positions,
+            width: 2,
+            material: Cesium.Color.YELLOW,
+        },
+    });
+
+    // Update the Leaflet marker position
+    leafletMarker.setLatLng([lat, lon]); // Update the existing marker's position
+    map.setView([lat, lon]); // Adjust Leaflet map view to the new position
 }
-
-// Initial Camera View in Cesium
-viewer.camera.setView({
-  destination: Cesium.Cartesian3.fromDegrees(homelon, homelat, 1000),
-});
-
 
   // ########################
   const lidarGraphDiv = document.getElementById('lidar-lite-v3-graph');
@@ -394,33 +391,33 @@ viewer.camera.setView({
 
   function updateLidarGraph(timestamp, distance) {
     if (!timestamp || distance === undefined) return;
-  
+
     let time = new Date(timestamp);
-  
+
     if (lidarData.startTime === null) {
       lidarData.startTime = time;
     }
-  
+
     let elapsedTime = (time - lidarData.startTime) / 1000;
-    
+
     lidarData.x.push(elapsedTime);
     lidarData.y.push(distance);
-  
+
     let minX = Math.max(0, elapsedTime - 10);
     let maxX = minX + 10;
     lidarData.layout.xaxis.range = [minX, maxX];
-  
+
     lidarData.trace.x = lidarData.x;
     lidarData.trace.y = lidarData.y;
-  
+
     lidarData.trace.text = lidarData.x.map((t, i) => {
       let formattedTime = new Date(lidarData.startTime.getTime() + t * 1000).toLocaleTimeString("en-GB");
       return `Time: ${formattedTime}<br>Distance: ${lidarData.y[i]} cm`;
     });
-  
+
     Plotly.react(lidarGraphDiv, [lidarData.trace], lidarData.layout, lidarData.config);
   }
-  
+
   const spectrometerGraphDiv = document.getElementById('spectrometer-graph');
   let spectrometerData = {
     traces: {},
@@ -440,24 +437,24 @@ viewer.camera.setView({
 
   function updateSpectrometerGraph(timestamp, telemetryData) {
     if (!timestamp || !telemetryData.spectrometer || telemetryData['spectrometer-voltage'] === undefined) return;
-  
+
     let time = new Date(timestamp);
     if (isNaN(time.getTime())) {
       console.error("Invalid timestamp:", timestamp);
       return;
     }
-  
+
     if (spectrometerData.startTime === null) {
       spectrometerData.startTime = time;
     }
-  
+
     let elapsedTime = (time - spectrometerData.startTime) / 1000;
     let spectrometerValues = telemetryData.spectrometer;
     let spectrometerVoltage = telemetryData['spectrometer-voltage'];
-  
+
     Object.keys(spectrometerValues).forEach((key) => {
       let wavelength = spectrometerValues[key];
-  
+
       if (!spectrometerData.traces[key]) {
         spectrometerData.traces[key] = {
           x: [],
@@ -473,24 +470,24 @@ viewer.camera.setView({
           }
         };
       }
-  
+
       let trace = spectrometerData.traces[key];
       trace.x.push(elapsedTime);
       trace.y.push(wavelength);
-  
+
       let minX = Math.max(0, elapsedTime - 10);
       let maxX = minX + 10;
       spectrometerData.layout.xaxis.range = [minX, maxX];
-  
+
       trace.trace.x = trace.x;
       trace.trace.y = trace.y;
-  
+
       trace.trace.text = trace.x.map((t, i) => {
         let formattedTime = new Date(spectrometerData.startTime.getTime() + t * 1000).toLocaleTimeString("en-GB");
         return `Time: ${formattedTime}<br>Wavelength: ${trace.y[i]} nm<br>Voltage: ${spectrometerVoltage} V`;
       });
     });
-  
+
     spectrometerData.layout.annotations = [
       {
         xref: 'paper',
@@ -504,11 +501,11 @@ viewer.camera.setView({
         font: { size: 18, color: 'red' }
       }
     ];
-  
+
     let tracesArray = Object.values(spectrometerData.traces).map(data => data.trace);
     Plotly.react(spectrometerGraphDiv, tracesArray, spectrometerData.layout, spectrometerData.config);
   }
-  
+
   Plotly.newPlot(spectrometerGraphDiv, [], spectrometerData.layout, spectrometerData.config);
 
   const spectrometerVoltageGraphDiv = document.getElementById('spectrometer-voltage-graph');
@@ -528,23 +525,23 @@ viewer.camera.setView({
 
   function updateSpectrometerVoltageGraph(timestamp, telemetryData) {
     if (!timestamp || !telemetryData['spectrometer-voltage']) return;
-  
+
     let time = new Date(timestamp);
-  
+
     if (spectrometerVoltageData.startTime === null) {
       spectrometerVoltageData.startTime = time;
     }
-  
+
     let elapsedTime = (time - spectrometerVoltageData.startTime) / 1000;
     let voltage = telemetryData['spectrometer-voltage'];
-  
+
     spectrometerVoltageData.x.push(elapsedTime);
     spectrometerVoltageData.y.push(voltage);
-  
+
     let minX = Math.max(0, elapsedTime - 10);
     let maxX = minX + 10;
     spectrometerVoltageData.layout.xaxis.range = [minX, maxX];
-  
+
     const trace = {
       x: spectrometerVoltageData.x,
       y: spectrometerVoltageData.y,
@@ -557,17 +554,80 @@ viewer.camera.setView({
       }),
       hoverinfo: 'text'
     };
-  
+
     Plotly.react(spectrometerVoltageGraphDiv, [trace], spectrometerVoltageData.layout, spectrometerVoltageData.config);
   }
-  
 
   Plotly.newPlot(spectrometerVoltageGraphDiv, [], spectrometerVoltageData.layout, spectrometerVoltageData.config);
+
+
+  const accelerometerGraphDiv = document.getElementById('accelerometer-graph');
+  let accelerometerData = {
+    x: [],
+    y: [],
+    layout: {
+      title: 'Acceleration',
+      xaxis: { title: 'Time (seconds)', range: [0, 10] },
+      yaxis: { title: 'Acceleration (m/s²)' },
+      margin: { t: 50, b: 70, l: 70, r: 50 },
+      font: { family: "Rubik, sans-serif" }
+    },
+    config: { responsive: true },
+    startTime: null
+  };
+  
+  function updateAccelerometerGraph(timestamp, telemetryData) {
+    if (!timestamp || telemetryData['accelerometer'] === undefined) {
+      console.error("Invalid telemetry data:", telemetryData);
+      return;
+    }
+  
+    let time = new Date(timestamp);
+  
+    if (accelerometerData.startTime === null) {
+      accelerometerData.startTime = time;
+    }
+  
+    let elapsedTime = (time - accelerometerData.startTime) / 1000;
+    let acceleration = telemetryData['accelerometer']; // Now directly using the acceleration value
+  
+    console.log("Time:", elapsedTime, "Acceleration:", acceleration);  // Debugging line
+  
+    accelerometerData.x.push(elapsedTime);
+    accelerometerData.y.push(acceleration);
+  
+    let minX = Math.max(0, elapsedTime - 10);
+    let maxX = minX + 10;
+    accelerometerData.layout.xaxis.range = [minX, maxX];
+  
+    const trace = {
+      x: accelerometerData.x,
+      y: accelerometerData.y,
+      mode: 'lines+markers',
+      name: 'Acceleration',
+      line: { width: 2 },
+      text: accelerometerData.x.map((t, i) => {
+        let formattedTime = new Date(accelerometerData.startTime.getTime() + t * 1000).toLocaleTimeString("en-GB");
+        return `Time: ${formattedTime}<br>Acceleration: ${accelerometerData.y[i]} m/s²`;
+      }),
+      hoverinfo: 'text'
+    };
+  
+    Plotly.react(accelerometerGraphDiv, [trace], accelerometerData.layout, accelerometerData.config);
+  }
+  
+  // Test the graph with dummy data if needed
+  // Plotly.newPlot(accelerometerGraphDiv, [{ x: [0, 1, 2], y: [0, 1, 2], mode: 'lines+markers' }], accelerometerData.layout);
+  
+  // Initial plot
+  Plotly.newPlot(accelerometerGraphDiv, [], accelerometerData.layout, accelerometerData.config);
+  
 
   window.addEventListener('resize', function () {
     Plotly.relayout('lidar-lite-v3-graph', { autosize: true });
     Plotly.relayout('spectrometer-voltage-graph', { autosize: true });
     Plotly.relayout('spectrometer-graph', { autosize: true });
+    Plotly.relayout('accelerometer-graph', { autosize: true });
   });
 
 }  

@@ -1,0 +1,4 @@
+timestamp,packet-counter,lidar-lite-v3,spectrometer-voltage,latitude,longitude,altitude,accelerometer,spectrometer_spectrometer1,spectrometer_spectrometer2,spectrometer_spectrometer3,spectrometer_spectrometer4,spectrometer_spectrometer5,spectrometer_spectrometer6
+2025-03-08 19:40:14,5.0,136.0,2.83,34.710922,-86.640869,250.0,0.136,0.023,0.941,1798.0,1778.0,4161.0,3327.0
+2025-03-08 19:40:14,941.0,6349.0,5344.0,9831.0,7703.0,1950.0,5847.0,7165.0,2748.0,241.0,9591.0,8542.0,3135.0
+2025-03-08 19:40:16,7.0,83.0,3.08,34.711349,-86.641235,250.0,-0.374,0.02,-0.702,9676.0,9188.0,1082.0,828.0

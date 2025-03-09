@@ -2,6 +2,9 @@
 .vscode
 .venv
 __pycache__
-.log
-.data
-.telemetry_logs
+
+log/
+*.log
+
+telemetry_data/
+*.csv

@@ -3,3 +3,4 @@ flask_socketio
 numpy
 pandas
 pyserial
+notebook

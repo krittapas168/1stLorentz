@@ -23,13 +23,16 @@ werkzeug_logger.disabled = True
 
 # -------------------- SERIAL SETUP --------------------
 _SerialPort = SerialPort()
-_SerialReader = SerialReader(_SerialPort)
-_parser = Parser(rx_data_format)
+_SerialReader = SerialReader(_SerialPort, encoding="utf-8")
+_parser = Parser(rx_data_format, header="H", tail="A")
 _queue = Queue()
 
 _thread_serial = None
 _thread_file_writer = None
 _telemetry_broadcaster = None
+
+gport = None
+gbaud = None
 
 # -------------------- MONITORING THREADS --------------------
 def monitor_serial_connection():
@@ -43,34 +46,45 @@ def monitor_serial_connection():
             socketio.emit('serial_disconnected', {'status': False, 'message': 'Disconnected'})
         time.sleep(1)
 
-previous_ports = []
 def monitor_ports():
-    global previous_ports
+    last_ports = set()
     while True:
         _SerialPort.refresh()
         current_ports = _SerialPort.ports()
-        if current_ports != previous_ports:
-            socketio.emit('receive_ports', current_ports)
-            previous_ports = current_ports
-        time.sleep(1)
+
+        if current_ports != last_ports:
+            socketio.emit('receive_ports', _SerialPort.ports())
+            last_ports = current_ports  
+
+        time.sleep(1)  
+
 
 # -------------------- SOCKETIO EVENTS --------------------
+
 @socketio.on('connect_serial')
 def connect_serial(data):
-    global _thread_serial, _telemetry_broadcaster, _thread_file_writer
+    global _thread_serial, _telemetry_broadcaster, _thread_file_writer, gbaud, gport
 
     port, baud = data.get('port'), data.get('baud')
     if not port or not baud:
         return socketio.emit('serial_connected', {'status': False, 'message': 'Invalid port or baud rate'})
 
     try:
+
         if _SerialPort.connect(port, baud):
+
+            gport = port
+            gbaud = baud
+
+            print(f"gport set to: {gport}")
+            print(f"gbaud set to: {gbaud}")
+
             # Start telemetry reading
             _thread_serial = ThreadSerial(parser=_parser, reader=_SerialReader, queue=_queue, socketio=socketio)
             _thread_serial.start()
 
             # Start file writing
-            file_writer = FileWriter(folder_name='telemetry_logs', save_name='telemetry')
+            file_writer = FileWriter(folder_name='3-15-test', save_name='telemetry', device_id='789')
             _thread_file_writer = ThreadFileWriter(file_writer, _queue)
             _thread_file_writer.start()
 
@@ -111,6 +125,25 @@ def disconnect_serial():
 @app.route("/")
 def ground_control_station():
     return render_template('index.html')
+
+@app.route("/reset_connection")
+def reset_connection():
+    global gport, gbaud
+
+    if not gport or not gbaud:
+        return jsonify({"status": "error", "message": "Port or baud rate not set"}), 400
+
+    try:
+        _SerialPort.disconnect()
+        time.sleep(0.500)
+        _SerialPort.connect(gport, gbaud)
+
+        socketio.emit('serial_connected', {'status': True, 'message': f'Reconnected to {gport} @ {gbaud} baud'})
+
+        return jsonify({"status": "success", "message": "Connection reset successfully"})
+    except Exception as e:
+        socketio.emit('serial_connected', {'status': False, 'message': f'Error: {str(e)}'})
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route("/get_ports", methods=['GET'])
 def get_ports():

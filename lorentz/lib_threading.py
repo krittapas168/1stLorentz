@@ -31,12 +31,15 @@ class ThreadSerial(ThreadBase):
             self.__reader.read()
             if self.__reader.available():
                 msg = self.__reader.get_message()
-                print(msg)  # Debugging
+                print(msg) 
                 print()
                 if len(msg) > 0:
-                    parsed_msg = self.__parser.parse(msg)
-                    self.__queue.push(parsed_msg)
-                    self.send_to_frontend(parsed_msg)  
+                    try:
+                        parsed_msg = self.__parser.parse(msg)
+                        self.__queue.push(parsed_msg)
+                        self.send_to_frontend(parsed_msg)  
+                    except ValueError as e:
+                        self.__logger.error(e)
 
             time.sleep(self.__interval)
 
@@ -44,8 +47,12 @@ class ThreadSerial(ThreadBase):
         while self.__reader.available():
             msg = self.__reader.get_message()
             if len(msg) > 0:
-                parsed_msg = self.__parser.parse(msg)
-                self.__queue.push(parsed_msg)
+                try:
+                    parsed_msg = self.__parser.parse(msg)
+                    self.__queue.push(parsed_msg)
+
+                except ValueError as e:
+                    self.__logger.error(e)
 
     def send_to_frontend(self, data):
         """Emit telemetry data to frontend via Flask-SocketIO."""
@@ -67,7 +74,7 @@ class ThreadSerial(ThreadBase):
 
 class TelemetryBroadcaster(ThreadBase):
     """Background thread that sends queue data to the frontend."""
-    def __init__(self, queue: Queue, socketio: SocketIO, interval: float = 0.100):
+    def __init__(self, queue: Queue, socketio: SocketIO, interval: float = 0.500):
         self.__queue = queue
         self.__socketio = socketio
         self.__interval = interval
@@ -80,7 +87,7 @@ class TelemetryBroadcaster(ThreadBase):
         self.__logger.info("Telemetry broadcast thread started.")
         while self._on:
             if self.__queue.available():
-                data = self.__queue.pop()
+                data = self.__queue.peek()
                 if data is not None:
                     self.__socketio.emit('telemetry_data', data)
             time.sleep(self.__interval)
@@ -93,7 +100,7 @@ class ThreadFileWriter(ThreadBase):
                  file_writer: FileWriter,
                  queue_csv: Queue,
                  queue_raw: Queue = None,
-                 interval: float = 0.050,
+                 interval: float = 0.500,
                  timeout: float = 4.000):
         self.__writer = file_writer
         self.__queue_csv = queue_csv

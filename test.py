@@ -1,28 +1,11 @@
-import time
-from lorentz import SerialPort, SerialReader, Logger
+import serial
 
-def main():
-    logger = Logger(target='LOG_MAIN')
-    serial_port = SerialPort()
+ser = serial.Serial(port='COM7', baudrate=57600, timeout=1)
 
-    port_name = input("Enter device name: ").strip()
-    if serial_port.connect(port_name, 9600):
-        logger.info(f"Connected to {port_name}")
-        serial_reader = SerialReader(port=serial_port, terminator='\r\n')
-
+while True:
+    if ser.in_waiting:
         try:
-            while True:
-                serial_reader.read()
-                if serial_reader.available():
-                    message = serial_reader.get_message()
-                    logger.info(f"Received message: {message}")
-
-                time.sleep(0.1)
-        except KeyboardInterrupt:
-            logger.info("Stopped by user.")
-        finally:
-            serial_port.disconnect()
-            logger.info("Disconnected.")
-
-if __name__ == "__main__":
-    main()
+            data = ser.readline().decode('ascii', errors='ignore').strip() 
+            print(f"Received: {data}")
+        except UnicodeDecodeError as e:
+            print(f"Decoding error: {e}")

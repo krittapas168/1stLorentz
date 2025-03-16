@@ -28,41 +28,31 @@
 
 /* ===== NAVBAR ===== */
 .navbar {
+    background-color: var(--bg-panel);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: var(--dark-color);
-    color: white;
-    padding: 0.56rem 2rem;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    position: relative;
+    padding: 0.75rem 2rem;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    position: sticky;
+    top: 0;
     z-index: 100;
 }
 
 .logo {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    cursor: pointer;
     text-decoration: none;
-    transition: opacity var(--transition-speed);
-}
-
-.logo:hover {
-    opacity: 0.9;
-}
-
-.logo a {
-    text-decoration: none;
-    color: white;
-    font-weight: 500;
+    color: var(--text-light);
+    font-weight: 600;
+    font-size: 1.25rem;
 }
 
 .logo img {
-    width: 30px;
-    height: auto;
-    padding: 2px;
+    height: 40px;
+    margin-right: 12px;
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
 }
 
 /* ===== TELEMETRY STATUS ===== */
@@ -296,6 +286,10 @@
     opacity: 0.5;
 }
 
+.end-time-color {
+    color: #f44336;
+  }
+
 #telemetry-connect-btn {
     background-color: var(--success-color);
     color: white;
@@ -345,6 +339,7 @@
     opacity: 0.4;
     cursor: not-allowed;
 }
+
 
 /* ===== DATA OVERVIEW BOX ===== */
 .data-overview-box {

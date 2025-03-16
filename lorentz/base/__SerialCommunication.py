@@ -1,6 +1,6 @@
 from .__Logger import LoggerBase
 from .__SerialPort import SerialPort
-
+import re
 
 class AbstractCommunication:
     def get_message(self, terminator: str = None) -> str:
@@ -78,7 +78,7 @@ class SerialReader(AbstractCommunication):
 
     def available(self) -> bool:
         return len(self.__stream) > 0 and self.__stream.find(self.__terminator) != -1
-
+    
     @property
     def port(self):
         return self.__port

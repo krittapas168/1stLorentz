@@ -43,8 +43,14 @@ window.onload = function () {
     updateSpectrometerGraph(data.timestamp, data);
     updateSpectrometerVoltageGraph(data.timestamp, data);
     updateAccelerometerGraph(data.timestamp, data)
+    updateVelocityGraph(data.timestamp, data)
 
-    updatePosition(data.longitude, data.latitude, data.altitude);
+    updatePosition(data.longitude, data.latitude);
+
+    if (isTimerRunning && data.timestamp) {
+      lastTimestamp = data.timestamp;
+    }
+
   });
 
   // --- Helper Functions ---
@@ -196,6 +202,27 @@ window.onload = function () {
     updateTelemetryStatus("disconnecting");
   }
 
+  function resetConnection() {
+    fetch('/reset_connection')
+      .then(response => response.json())
+      .then(data => {
+        const statusDiv = document.getElementById('telemetry-status');
+
+        if (data.status === "success") {
+          statusDiv.classList.add("success");
+        } else {
+          statusDiv.classList.add("error")
+          statusDiv.textContent = "Error: " + data.message;
+        }
+      })
+      .catch(error => {
+        const statusDiv = document.getElementById('telemetry-status');
+        statusDiv.textContent = "Error: Failed to reset connection";
+      });
+  }
+
+  document.getElementById('telemetry-status').addEventListener('click', resetConnection);
+
   function saveSelection() {
     const selectedPort = portSelect.value;
     const selectedBaud = baudSelect.value;
@@ -239,15 +266,26 @@ window.onload = function () {
 
   // --- Telemetry Config (for UI status classes) ---
   const telemetryConfig = {
-    "timestamp": { unit: '', ranges: { normal: [0, 10], warning: [10, 15], critical: [15, Infinity] } },
-    "packet-counter": { unit: '', ranges: { normal: [0, Infinity], warning: [5000, 7500], critical: [7500, 10000] } },
-    "lidar-lite-v3": { unit: 'cm', ranges: { normal: [0, Infinity], warning: [200, 500], critical: [500, 1000] } },
-    "spectrometer-voltage": { unit: 'V', ranges: { normal: [0, Infinity], warning: [3, 6], critical: [6, 10] } },
-    "latitude": { unit: '°', ranges: { normal: [-45, Infinity], warning: [45, 70], critical: [70, 90] } },
-    "longitude": { unit: '°', ranges: { normal: [-90, Infinity], warning: [90, 135], critical: [135, 180] } },
-    "altitude": { unit: 'm', ranges: { normal: [0, Infinity], warning: [1000, 5000], critical: [5000, 10000] } },
-    "accelerometer": { unit: 'm/s²', ranges: { normal: [-10, Infinity], warning: [10, 20], critical: [20, 100] } },
+    "timestamp": { unit: '', ranges: { normal: [0, Infinity] } },
+
+    "packet-counter": { unit: '', ranges: { normal: [0, Infinity], critical: [-1, Infinity] } },
+
+    "lidar-lite-v3": { unit: 'cm', ranges: { normal: [0, 4000], warning: [100, 300], critical: [300, 500] } },
+
+    "spectrometer-voltage": { unit: 'V', ranges: { normal: [0, 5], warning: [3, 4], critical: [4, 5] } },
+
+    "spectrometer-water-detect": { unit: '', ranges: { normal: [1], warning: [0], critical: [2, Infinity] } },
+
+    "latitude": { unit: '°', ranges: { normal: [-90, 90], warning: [30, 60], critical: [60, 90] } },
+    "longitude": { unit: '°', ranges: { normal: [-180, 180], warning: [60, 120], critical: [120, 180] } },
+    "altitude": { unit: 'm', ranges: { normal: [0, 5000], warning: [500, 3000], critical: [3000, 6000] } },
+
+    "accelerometer": { unit: 'm/s²', ranges: { normal: [-5, 5], warning: [5, 10], critical: [10, 20] } },
+
+    "velocity": { unit: 'm/s', ranges: { normal: [-5, 5], warning: [5, 10], critical: [10, 20] } }
   };
+
+
 
   // Determine a status class based on telemetry value
   function getStatusClass(value, key) {
@@ -272,93 +310,135 @@ window.onload = function () {
       let value = data[key] ?? "N/A";
       const unit = telemetryConfig[key].unit;
 
-      // Format timestamp to show only time
+      // Handle timestamp conversion to human-readable format
       if (key === "timestamp" && value !== "N/A") {
-        const dateObj = new Date(value);
-        if (!isNaN(dateObj)) {
-          value = dateObj.toLocaleTimeString("en-GB"); // HH:MM:SS format
-        }
+        // Assuming value is a Unix timestamp (in seconds)
+        const dateObj = new Date(value * 1000); // Convert from seconds to milliseconds
+
+        // Format to human-readable date (can be customized)
+        const humanReadableTime = dateObj.toLocaleString(); // or dateObj.toUTCString()
+        value = humanReadableTime;  // Update value with formatted time
       }
 
+      // Display value and unit
       element.innerHTML = `${value} <span class='data-unit'>${unit}</span>`;
+
+      // Update the element's status class based on value
       const statusClass = getStatusClass(value, key);
       element.classList.remove('normal', 'warning', 'critical');
       element.classList.add(statusClass);
     });
   }
+
   // ########################################################################
 
   // MAP
   //CESIUM
 
-  Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkOGY4Y2JlMy1jNjAzLTQwNzYtYjA0Yy1iN2I4MzhiYmY2YTkiLCJpZCI6Mjc2MDgwLCJpYXQiOjE3Mzk1NDcyMzZ9.ZJxaJeB0aONhWRB1rIUPK1d0cHchAtIFS_3ExCWi3hI';
+  Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjYzQwMDViYS0zMWQ4LTRmZWYtOWY1My1mNWRmZjYxNGQ1OTEiLCJpZCI6Mjc2MDgwLCJpYXQiOjE3NDE5ODAwOTV9.rkumv2e5u-oSfMCpeByJlZA96ZHgXZiNhTehHPJU4W0';
 
-  let homelat = 34.711278;
-  let homelon = -86.641166;
+  // Home position (initial position)
+  let homelat = 12.97556;
+  let homelon = 101.45611;
 
+  // Initialize Cesium Viewer
   const viewer = new Cesium.Viewer('cesiumContainer', {
     animation: false,
     timeline: false,
     terrainProvider: Cesium.createWorldTerrain(),
     sceneMode: Cesium.SceneMode.SCENE3D,
-    homeButton: false,
+    homeButton: true,
   });
 
-  let positions = [];
-  let entity = viewer.entities.add({
-    id: "Rover",
-    position: Cesium.Cartesian3.fromDegrees(homelon, homelat, 100),
-    point: { pixelSize: 7, color: Cesium.Color.RED },
-  });
-
-  // Leaflet Map Setup
-  var tileLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', { attribution: false });
-  var map = L.map('leafletMap', {
+  // Initialize Leaflet Map
+  const tileLayer = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', { attribution: false });
+  const map = L.map('leafletMap', {
     zoomControl: true,
     layers: [tileLayer],
     maxZoom: 18,
-    minZoom: 6
+    minZoom: 6,
   }).setView([homelat, homelon], 16);
 
   // Ensure the map size is updated
   setTimeout(() => { map.invalidateSize(); }, 800);
 
-  // Create the Leaflet marker once
+  // Variables to track positions and entities
+  let positions = []; // Stores historical positions for path tracing
+  let entity = viewer.entities.add({
+    id: "Rover",
+    position: Cesium.Cartesian3.fromDegrees(homelon, homelat, 1000), // Initial home position
+    point: {
+      pixelSize: 10,
+      color: Cesium.Color.RED, // Use a red dot as the marker
+    },
+  });
+
+  // Create the Leaflet marker (using a default marker)
   let leafletMarker = L.marker([homelat, homelon]).addTo(map);
 
+  // Flag to check if the first data point has been received
+  let isFirstDataPoint = true;
+
   // Function to update position in both Cesium and Leaflet
-  function updatePosition(lon, lat, alt) {
+  function updatePosition(lon, lat) {
+    // Validate coordinates
     if (isNaN(lon) || isNaN(lat)) {
-        console.error('Invalid coordinates received:', { lon, lat, alt });
-        return;
+      console.error('Invalid coordinates received:', { lon, lat });
+      return;
     }
     if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-        console.error('Out of bounds coordinates received:', { lon, lat, alt });
-        return;
+      console.error('Out of bounds coordinates received:', { lon, lat });
+      return;
     }
-    alt = isNaN(alt) ? 100 : alt; // Default altitude if not provided
 
-    // Update Cesium position
-    let newPosition = Cesium.Cartesian3.fromDegrees(lon, lat, alt);
-    entity.position.setValue(newPosition);
+    // --- Update Cesium Position ---
+    const newPosition = Cesium.Cartesian3.fromDegrees(lon, lat, 70
+    );
 
-    positions.push(newPosition); // Store the position for the path
+    // Update the vehicle entity position
+    entity.position = newPosition;
+
+    // If this is the first data point, reset the path and start tracing
+    if (isFirstDataPoint) {
+      positions = []; // Reset the path
+      isFirstDataPoint = false; // Mark that the first data point has been received
+
+      // Fly to the first data point with a reasonable height
+      viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(lon, lat, 1000), // Set a fixed height (1000 meters)
+        orientation: {
+          heading: Cesium.Math.toRadians(0),
+          pitch: Cesium.Math.toRadians(-90), // Slight tilt for better view
+          roll: 0,
+        },
+        duration: 2, // Fly-to duration in seconds
+      });
+    }
+
+    // Store the position for the path
+    positions.push(newPosition);
 
     // Update the rover path in Cesium
     viewer.entities.removeById('roverPath');
     viewer.entities.add({
-        id: 'roverPath',
-        polyline: {
-            positions: positions,
-            width: 2,
-            material: Cesium.Color.YELLOW,
-        },
+      id: 'roverPath',
+      polyline: {
+        positions: positions,
+        width: 2,
+        material: Cesium.Color.YELLOW,
+      },
     });
 
-    // Update the Leaflet marker position
+    // --- Update Leaflet Position ---
     leafletMarker.setLatLng([lat, lon]); // Update the existing marker's position
-    map.setView([lat, lon]); // Adjust Leaflet map view to the new position
-}
+    map.setView([lat, lon]); // Re-center Leaflet map to the new position
+  }
+
+  function generateLidarData() {
+    const timestamp = Date.now(); // current time in milliseconds
+    const distance = Math.floor(Math.random() * 400); // Random distance between 0 and 400 cm
+    return { timestamp, distance };
+  }
 
   // ########################
   const lidarGraphDiv = document.getElementById('lidar-lite-v3-graph');
@@ -392,13 +472,13 @@ window.onload = function () {
   function updateLidarGraph(timestamp, distance) {
     if (!timestamp || distance === undefined) return;
 
-    let time = new Date(timestamp);
+    let time = unixToHumanReadable(timestamp);  // Use the conversion function
 
     if (lidarData.startTime === null) {
-      lidarData.startTime = time;
+      lidarData.startTime = new Date(time);
     }
 
-    let elapsedTime = (time - lidarData.startTime) / 1000;
+    let elapsedTime = (new Date(time) - lidarData.startTime) / 1000;
 
     lidarData.x.push(elapsedTime);
     lidarData.y.push(distance);
@@ -418,11 +498,16 @@ window.onload = function () {
     Plotly.react(lidarGraphDiv, [lidarData.trace], lidarData.layout, lidarData.config);
   }
 
+  function unixToHumanReadable(unixTimestamp) {
+    const dateObj = new Date(unixTimestamp * 1000);  // Convert from seconds to milliseconds
+    return dateObj.toLocaleString();  // Converts to a human-readable date/time string
+  }
+
   const spectrometerGraphDiv = document.getElementById('spectrometer-graph');
   let spectrometerData = {
     traces: {},
     layout: {
-      title: 'C12880MA',
+      title: 'Spectrometer',
       xaxis: { title: 'Time (seconds)', range: [0, 10] },
       yaxis: { title: 'Wavelength (nm)' },
       margin: { t: 50, b: 70, l: 70, r: 50 },
@@ -438,17 +523,13 @@ window.onload = function () {
   function updateSpectrometerGraph(timestamp, telemetryData) {
     if (!timestamp || !telemetryData.spectrometer || telemetryData['spectrometer-voltage'] === undefined) return;
 
-    let time = new Date(timestamp);
-    if (isNaN(time.getTime())) {
-      console.error("Invalid timestamp:", timestamp);
-      return;
-    }
+    let time = unixToHumanReadable(timestamp);  // Use the conversion function
 
     if (spectrometerData.startTime === null) {
-      spectrometerData.startTime = time;
+      spectrometerData.startTime = new Date(time);
     }
 
-    let elapsedTime = (time - spectrometerData.startTime) / 1000;
+    let elapsedTime = (new Date(time) - spectrometerData.startTime) / 1000;
     let spectrometerValues = telemetryData.spectrometer;
     let spectrometerVoltage = telemetryData['spectrometer-voltage'];
 
@@ -526,13 +607,13 @@ window.onload = function () {
   function updateSpectrometerVoltageGraph(timestamp, telemetryData) {
     if (!timestamp || !telemetryData['spectrometer-voltage']) return;
 
-    let time = new Date(timestamp);
+    let time = unixToHumanReadable(timestamp);  // Use the conversion function
 
     if (spectrometerVoltageData.startTime === null) {
-      spectrometerVoltageData.startTime = time;
+      spectrometerVoltageData.startTime = new Date(time);
     }
 
-    let elapsedTime = (time - spectrometerVoltageData.startTime) / 1000;
+    let elapsedTime = (new Date(time) - spectrometerVoltageData.startTime) / 1000;
     let voltage = telemetryData['spectrometer-voltage'];
 
     spectrometerVoltageData.x.push(elapsedTime);
@@ -575,31 +656,30 @@ window.onload = function () {
     config: { responsive: true },
     startTime: null
   };
-  
+
   function updateAccelerometerGraph(timestamp, telemetryData) {
     if (!timestamp || telemetryData['accelerometer'] === undefined) {
       console.error("Invalid telemetry data:", telemetryData);
       return;
     }
-  
-    let time = new Date(timestamp);
-  
+
+    let time = unixToHumanReadable(timestamp);  // Use the conversion function
+
     if (accelerometerData.startTime === null) {
-      accelerometerData.startTime = time;
+      accelerometerData.startTime = new Date(time);
     }
-  
-    let elapsedTime = (time - accelerometerData.startTime) / 1000;
+
+    let elapsedTime = (new Date(time) - accelerometerData.startTime) / 1000;
     let acceleration = telemetryData['accelerometer']; // Now directly using the acceleration value
-  
-    console.log("Time:", elapsedTime, "Acceleration:", acceleration);  // Debugging line
-  
+
+
     accelerometerData.x.push(elapsedTime);
     accelerometerData.y.push(acceleration);
-  
+
     let minX = Math.max(0, elapsedTime - 10);
     let maxX = minX + 10;
     accelerometerData.layout.xaxis.range = [minX, maxX];
-  
+
     const trace = {
       x: accelerometerData.x,
       y: accelerometerData.y,
@@ -612,22 +692,221 @@ window.onload = function () {
       }),
       hoverinfo: 'text'
     };
-  
+
     Plotly.react(accelerometerGraphDiv, [trace], accelerometerData.layout, accelerometerData.config);
   }
-  
-  // Test the graph with dummy data if needed
-  // Plotly.newPlot(accelerometerGraphDiv, [{ x: [0, 1, 2], y: [0, 1, 2], mode: 'lines+markers' }], accelerometerData.layout);
-  
+
   // Initial plot
   Plotly.newPlot(accelerometerGraphDiv, [], accelerometerData.layout, accelerometerData.config);
-  
+}
 
-  window.addEventListener('resize', function () {
-    Plotly.relayout('lidar-lite-v3-graph', { autosize: true });
-    Plotly.relayout('spectrometer-voltage-graph', { autosize: true });
-    Plotly.relayout('spectrometer-graph', { autosize: true });
-    Plotly.relayout('accelerometer-graph', { autosize: true });
+const velocityGraphDiv = document.getElementById('velocity-graph');
+let velocityData = {
+  x: [], // Array to store time values
+  y: [], // Array to store velocity values
+  layout: {
+    title: 'Velocity',
+    xaxis: { title: 'Time (seconds)', range: [0, 10] },
+    yaxis: { title: 'Velocity (m/s)' },
+    margin: { t: 50, b: 70, l: 70, r: 50 },
+    font: { family: "Rubik, sans-serif" }
+  },
+  config: { responsive: true },
+  startTime: null,
+};
+
+// Helper function to convert Unix timestamp to human-readable time
+function unixToHumanReadable(unixTimestamp) {
+  const dateObj = new Date(unixTimestamp * 1000);  // Convert from seconds to milliseconds
+  return dateObj.toLocaleString();  // Converts to a human-readable date/time string
+}
+
+function updateVelocityGraph(timestamp, telemetryData) {
+  // Check if telemetryData contains valid velocity data
+  if (!timestamp || telemetryData['velocity'] === undefined) {
+    console.error("Invalid telemetry data:", telemetryData);
+    return;
+  }
+
+  // Convert the timestamp to human-readable format
+  let time = unixToHumanReadable(timestamp);
+
+  // Set the start time for the first data point
+  if (velocityData.startTime === null) {
+    velocityData.startTime = new Date(time);
+  }
+
+  // Calculate elapsed time (in seconds)
+  let elapsedTime = (new Date(time) - velocityData.startTime) / 1000;
+
+  // Get the velocity value from telemetry data
+  let velocity = telemetryData['velocity'];
+
+  // Add new data to the arrays
+  velocityData.x.push(elapsedTime);
+  velocityData.y.push(velocity);
+
+  // Update the x-axis range to show the last 10 seconds of data
+  let minX = Math.max(0, elapsedTime - 10);
+  let maxX = minX + 10;
+  velocityData.layout.xaxis.range = [minX, maxX];
+
+  // Create the trace for Plotly
+  const trace = {
+    x: velocityData.x,
+    y: velocityData.y,
+    mode: 'lines+markers',
+    name: 'Velocity',
+    line: { width: 2 },
+    text: velocityData.x.map((t, i) => {
+      let formattedTime = new Date(velocityData.startTime.getTime() + t * 1000).toLocaleTimeString("en-GB");
+      return `Time: ${formattedTime}<br>Velocity: ${velocityData.y[i]} m/s`;
+    }),
+    hoverinfo: 'text'
+  };
+
+  // Update the velocity graph with new data
+  Plotly.react(velocityGraphDiv, [trace], velocityData.layout, velocityData.config);
+}
+
+// Initial plot setup for the velocity graph
+Plotly.newPlot(velocityGraphDiv, [], velocityData.layout, velocityData.config);
+
+
+document.addEventListener("DOMContentLoaded", function () {
+  const themeToggle = document.getElementById("theme-toggle");
+  const body = document.body;
+
+  // Check for saved theme in localStorage
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme) {
+    body.setAttribute("data-theme", savedTheme);
+    themeToggle.checked = savedTheme === "light";
+  }
+
+  // Toggle theme on switch change
+  themeToggle.addEventListener("change", function () {
+    if (themeToggle.checked) {
+      body.setAttribute("data-theme", "light");
+      localStorage.setItem("theme", "light");
+    } else {
+      body.setAttribute("data-theme", "dark");
+      localStorage.setItem("theme", "dark");
+    }
   });
+});
 
-}  
+let startTime = null; // Start time (from telemetry or manual start)
+let timerInterval = null; // Timer interval
+let isTimerRunning = false; // Track if timer is running
+let firstTimestamp = sessionStorage.getItem("firstTimestamp")
+                      ? parseInt(sessionStorage.getItem("firstTimestamp"))
+                      : null; // Load from session
+let lastTimestamp = null; // Last timestamp from telemetry
+
+// Function to start the timer
+function startTimer() {
+  if (isTimerRunning) return; // Prevent duplicate starts
+
+  // If telemetry data is available, use its timestamp
+  if (lastTimestamp) {
+    firstTimestamp = lastTimestamp;
+    sessionStorage.setItem("firstTimestamp", firstTimestamp); // Save to session
+  } else {
+    // If no telemetry, use system time
+    firstTimestamp = Math.floor(Date.now() / 1000);
+  }
+
+  startTime = firstTimestamp;
+  timerInterval = setInterval(updateTimer, 1000);
+  isTimerRunning = true;
+
+  const startStopButton = document.getElementById('start-stop-timer');
+  startStopButton.textContent = 'Stop';
+  startStopButton.classList.add('running'); // Add running class
+
+  document.getElementById('start-time').textContent = new Date(startTime * 1000).toLocaleTimeString();
+  document.getElementById('start-time').classList.add('start-time-color');
+  document.getElementById('end-time').textContent = '--:--:--';
+  document.getElementById('end-time').classList.remove('end-time-color');
+}
+
+// Function to stop the timer
+function stopTimer() {
+  if (!isTimerRunning) return;
+
+  clearInterval(timerInterval);
+  isTimerRunning = false;
+  const startStopButton = document.getElementById('start-stop-timer');
+  startStopButton.textContent = 'Start';
+  startStopButton.classList.remove('running'); // Remove running class
+
+  // Use last telemetry timestamp or system time
+  const endTimestamp = lastTimestamp || Math.floor(Date.now() / 1000);
+  document.getElementById('end-time').textContent = new Date(endTimestamp * 1000).toLocaleTimeString();
+  document.getElementById('end-time').classList.add('end-time-color');
+
+  // Store end time in session to calculate elapsed time later
+  sessionStorage.setItem("endTimestamp", endTimestamp);
+}
+
+// Function to update the timer display
+function updateTimer() {
+  if (!firstTimestamp) return;
+
+  const currentTimestamp = lastTimestamp || Math.floor(Date.now() / 1000);
+  const elapsedTime = currentTimestamp - firstTimestamp;
+
+  const hours = Math.floor(elapsedTime / 3600);
+  const minutes = Math.floor((elapsedTime % 3600) / 60);
+  const seconds = elapsedTime % 60;
+
+  const formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  document.getElementById('timer').textContent = formattedTime;
+}
+
+// Reset Timer
+document.getElementById('reset-timer').addEventListener('click', () => {
+  clearInterval(timerInterval);
+  document.getElementById('timer').textContent = '00:00:00';
+  document.getElementById('start-time').textContent = '--:--:--';
+  document.getElementById('end-time').textContent = '--:--:--';
+  const startStopButton = document.getElementById('start-stop-timer');
+  startStopButton.textContent = 'Start';
+  startStopButton.classList.remove('running'); // Remove running class
+  document.getElementById('start-time').classList.remove('start-time-color');
+  document.getElementById('end-time').classList.remove('end-time-color');
+
+  isTimerRunning = false;
+  firstTimestamp = null;
+  lastTimestamp = null;
+  sessionStorage.removeItem("firstTimestamp");
+  sessionStorage.removeItem("endTimestamp");
+});
+
+// Add event listener to start/stop button
+document.getElementById('start-stop-timer').addEventListener('click', () => {
+  if (isTimerRunning) {
+    stopTimer();
+  } else {
+    startTimer();
+  }
+});
+
+  const storedFirstTimestamp = sessionStorage.getItem("firstTimestamp");
+  const storedEndTimestamp = sessionStorage.getItem("endTimestamp");
+
+  if (storedFirstTimestamp) {
+    firstTimestamp = parseInt(storedFirstTimestamp);
+    document.getElementById('start-time').textContent = new Date(firstTimestamp * 1000).toLocaleTimeString();
+    document.getElementById('start-time').classList.add('start-time-color');
+
+    if (storedEndTimestamp) {
+      const endTimestamp = parseInt(storedEndTimestamp);
+      document.getElementById('end-time').textContent = new Date(endTimestamp * 1000).toLocaleTimeString();
+      document.getElementById('end-time').classList.add('end-time-color');
+    } else {
+      startTimer(); // Resume if no end time is set
+    }
+
+};

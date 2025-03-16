@@ -6,12 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lorentz - GCS</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='long.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/rover.webp') }}">
     <link href="https://cdn.jsdelivr.net/npm/cesium@1.103.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-    <script src="https://cdn.jsdelivr.net/npm/cesium@1.103.0/Build/Cesium/Cesium.js" defer></script> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/cesium@1.103.0/Build/Cesium/Cesium.js" defer></script>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js" defer></script>
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js" defer></script>
     <script src="https://cdn.plot.ly/plotly-latest.min.js" defer></script>
@@ -22,16 +28,33 @@
 <body>
     <!-- N a v b a r -->
     <nav class="navbar">
+        <!-- Centered Logo -->
         <div class="logo">
             <a href="/" class="logo">
                 <img src="{{ url_for('static', filename='img/rover.webp') }}" alt="">
                 Lorentz Ground Control Station
             </a>
         </div>
-        <div id="telemetry-status">
-            Loading...  
+
+        <!-- Theme Toggle -->
+        <div class="right-section">
+            <div class="theme-toggle-container">
+                <label class="theme-toggle">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="slider">
+                        <i class="fas fa-moon"></i> <!-- Moon icon -->
+                        <i class="fas fa-sun"></i> <!-- Sun icon -->
+                    </span>
+                </label>
+            </div>
+
+            <!-- Connection Status on the Right -->
+            <div id="telemetry-status">
+                Loading...
+            </div>
         </div>
     </nav>
+
     <!-- M a i n  -->
     <main>
         <div class="container">
@@ -43,7 +66,7 @@
                     </div>
                     <div class="command-line">
                         <label for="rover-command">Send:</label>
-                        <select id="rover-command">
+                        <select id="rover-command" disabled>
                             <option value="777">Lidar LiteV3 Activated</option>
                             <option value="888">Spectrometer Activated</option>
                             <option value="999">Don't know either</option>
@@ -52,27 +75,53 @@
                     </div>
                 </div>
 
+                <div class="command-form">
+                    <h2>Timer</h2>
+                <div class="timer-display"> 
+                    <div id="timer">00:00:00</div>
+                    <div class="mission-times">
+                      <div class="time-block">
+                        <span class="time-label">Start Time</span>
+                        <span id="start-time">--:--:--</span>
+                      </div>
+                      <div class="time-block">
+                        <span class="time-label">End Time</span>
+                        <span id="end-time">--:--:--</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="timer-buttons">
+                    <button id="start-stop-timer">Start</button>
+                    <button id="reset-timer">Reset</button>
+                  </div>
+                </div>
+
                 <div class="data-overview-box">
                     <div class="data-overview-title">
                         <h2>Telemetry Data</h2>
                     </div>
                     <div class="data-overview">
                         <div class="data-card">
+                            <div class="data-label">Packet Counter</div>
+                            <div class="data-value" id="packet-counter">N/A <span class="data-unit"></span></div>
+                        </div>
+                        <div class="data-card">
                             <div class="data-label">Timestamp</div>
                             <div class="data-value" id="timestamp">N/A <span class="data-unit"></span></div>
                         </div>
                         <div class="data-card">
-                            <div class="data-label">Packet Counter</div>
-                            <div class="data-value" id="packet-counter">N/A <span class="data-unit"></span></div>
-                        </div>
-                        <div class="data-card" >
                             <div class="data-label">LidarLite V3</div>
-                            <div class="data-value" id="lidar-lite-v3" >N/A <span class="data-unit">cm</span>
+                            <div class="data-value" id="lidar-lite-v3">N/A <span class="data-unit">cm</span>
                             </div>
                         </div>
                         <div class="data-card">
                             <div class="data-label">Spectrometer Voltage</div>
                             <div class="data-value" id="spectrometer-voltage">N/A <span class="data-unit">V</span></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-label">Water Detect</div>
+                            <div class="data-value" id="spectrometer-water-detect">N/A <span class="data-unit"></span>
+                            </div>
                         </div>
                         <div class="data-card">
                             <div class="data-label">Latitude</div>
@@ -83,11 +132,15 @@
                             <div class="data-value" id="longitude">N/A <span class="data-unit">°</span></div>
                         </div>
                         <div class="data-card">
-                            <div class="data-label">Altitute</div>
+                            <div class="data-label">Altitude</div>
                             <div class="data-value" id="altitude">N/A <span class="data-unit">m</span></div>
                         </div>
                         <div class="data-card">
-                            <div class="data-label">Accerelometer</div>
+                            <div class="data-label">Velocity</div>
+                            <div class="data-value" id="velocity">N/A <span class="data-unit">m/s</span></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="data-label">Accerelation</div>
                             <div class="data-value" id="accelerometer">N/A <span class="data-unit">m/s2</span></div>
                         </div>
                     </div>
@@ -127,7 +180,7 @@
                         <div id="spectrometer-voltage-graph"></div>
                     </div>
                 </div>
-                
+
                 <div class="second-container">
                     <div class="graph1">
                         <div id="spectrometer-graph"></div>
@@ -136,20 +189,20 @@
 
                 <div class="second-container">
                     <div class="graph1">
-                        <div id="accelerometer-graph"></div>
+                        <div id="velocity-graph"></div>
                     </div>
                     <div class="graph2">
-                        <iframe width="750" height="400" src="https://www.youtube.com/embed/PgQMTueI6h4" title="ASMR Mic Scratching, Pumping, Swirling (Intense)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                        <div id="accelerometer-graph"></div>
                     </div>
                 </div>
 
 
 
                 <div class="end">
-                    
-                </div>
+
                 </div>
             </div>
+        </div>
         </div>
     </main>
 </body>

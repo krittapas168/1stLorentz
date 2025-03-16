@@ -2,7 +2,6 @@ from collections.abc import Iterable
 from collections.abc import Sized
 import re
 from typing import Dict, Any, Optional, List
-import datetime
 
 from .lib_logger import Logger
 
@@ -87,13 +86,8 @@ class Parser:
 
         for field, length in self.__data_format.items():
             if length == 1:
-                if field == "timestamp":
-                    # Do not consume a token for "timestamps" --
-                    # instead, assign the current real time.
-                    data_dict[field] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                else:
-                    data_dict[field] = self.__parse_value(data_list[index])
-                    index += 1
+                data_dict[field] = self.__parse_value(data_list[index])
+                index += 1
             else:
                 data_dict[field] = {
                     f"{field}{i + 1}": self.__parse_value(data_list[index + i])

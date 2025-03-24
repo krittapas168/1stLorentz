@@ -47,10 +47,17 @@ window.onload = function () {
 
     updatePosition(data.longitude, data.latitude);
 
-    if (isTimerRunning && data.timestamp) {
-      lastTimestamp = data.timestamp;
+    if (data.timestamp) {
+      if (!firstTimestamp) {
+        firstTimestamp = data.timestamp;
+        sessionStorage.setItem("firstTimestamp", firstTimestamp);
+        document.getElementById('start-time').textContent = new Date(firstTimestamp * 1000).toLocaleTimeString();
+        document.getElementById('start-time').classList.add('start-time-color');
+        // Don't call startTimer() here - wait for user to click Start
+      }
+      
+      lastTelemetryTimestamp = data.timestamp;
     }
-
   });
 
   // --- Helper Functions ---
@@ -796,36 +803,26 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-let startTime = null; // Start time (from telemetry or manual start)
 let timerInterval = null; // Timer interval
 let isTimerRunning = false; // Track if timer is running
-let firstTimestamp = sessionStorage.getItem("firstTimestamp")
-                      ? parseInt(sessionStorage.getItem("firstTimestamp"))
-                      : null; // Load from session
-let lastTimestamp = null; // Last timestamp from telemetry
+let timerStartTime = null; // When the timer was started by user
+let timerEndTime = null; // When the timer was stopped by user
 
-// Function to start the timer
+// Function to start the timer (only when user clicks Start)
 function startTimer() {
-  if (isTimerRunning) return; // Prevent duplicate starts
+  if (isTimerRunning) return;
 
-  // If telemetry data is available, use its timestamp
-  if (lastTimestamp) {
-    firstTimestamp = lastTimestamp;
-    sessionStorage.setItem("firstTimestamp", firstTimestamp); // Save to session
-  } else {
-    // If no telemetry, use system time
-    firstTimestamp = Math.floor(Date.now() / 1000);
-  }
-
-  startTime = firstTimestamp;
+  timerStartTime = Math.floor(Date.now() / 1000);
+  sessionStorage.setItem("timerStartTime", timerStartTime);
+  
   timerInterval = setInterval(updateTimer, 1000);
   isTimerRunning = true;
 
   const startStopButton = document.getElementById('start-stop-timer');
   startStopButton.textContent = 'Stop';
-  startStopButton.classList.add('running'); // Add running class
+  startStopButton.classList.add('running');
 
-  document.getElementById('start-time').textContent = new Date(startTime * 1000).toLocaleTimeString();
+  document.getElementById('start-time').textContent = new Date(timerStartTime * 1000).toLocaleTimeString();
   document.getElementById('start-time').classList.add('start-time-color');
   document.getElementById('end-time').textContent = '--:--:--';
   document.getElementById('end-time').classList.remove('end-time-color');
@@ -837,32 +834,31 @@ function stopTimer() {
 
   clearInterval(timerInterval);
   isTimerRunning = false;
+  
+  timerEndTime = Math.floor(Date.now() / 1000);
+  sessionStorage.setItem("timerEndTime", timerEndTime);
+  
   const startStopButton = document.getElementById('start-stop-timer');
   startStopButton.textContent = 'Start';
-  startStopButton.classList.remove('running'); // Remove running class
+  startStopButton.classList.remove('running');
 
-  // Use last telemetry timestamp or system time
-  const endTimestamp = lastTimestamp || Math.floor(Date.now() / 1000);
-  document.getElementById('end-time').textContent = new Date(endTimestamp * 1000).toLocaleTimeString();
+  document.getElementById('end-time').textContent = new Date(timerEndTime * 1000).toLocaleTimeString();
   document.getElementById('end-time').classList.add('end-time-color');
-
-  // Store end time in session to calculate elapsed time later
-  sessionStorage.setItem("endTimestamp", endTimestamp);
 }
 
 // Function to update the timer display
 function updateTimer() {
-  if (!firstTimestamp) return;
+  if (!timerStartTime) return;
 
-  const currentTimestamp = lastTimestamp || Math.floor(Date.now() / 1000);
-  const elapsedTime = currentTimestamp - firstTimestamp;
+  const currentTime = Math.floor(Date.now() / 1000);
+  const elapsedTime = currentTime - timerStartTime;
 
   const hours = Math.floor(elapsedTime / 3600);
   const minutes = Math.floor((elapsedTime % 3600) / 60);
   const seconds = elapsedTime % 60;
 
-  const formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  document.getElementById('timer').textContent = formattedTime;
+  document.getElementById('timer').textContent = 
+    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 // Reset Timer
@@ -871,20 +867,22 @@ document.getElementById('reset-timer').addEventListener('click', () => {
   document.getElementById('timer').textContent = '00:00:00';
   document.getElementById('start-time').textContent = '--:--:--';
   document.getElementById('end-time').textContent = '--:--:--';
+  
   const startStopButton = document.getElementById('start-stop-timer');
   startStopButton.textContent = 'Start';
-  startStopButton.classList.remove('running'); // Remove running class
+  startStopButton.classList.remove('running');
+  
   document.getElementById('start-time').classList.remove('start-time-color');
   document.getElementById('end-time').classList.remove('end-time-color');
 
   isTimerRunning = false;
-  firstTimestamp = null;
-  lastTimestamp = null;
-  sessionStorage.removeItem("firstTimestamp");
-  sessionStorage.removeItem("endTimestamp");
+  timerStartTime = null;
+  timerEndTime = null;
+  sessionStorage.removeItem("timerStartTime");
+  sessionStorage.removeItem("timerEndTime");
 });
 
-// Add event listener to start/stop button
+// Start/Stop button handler
 document.getElementById('start-stop-timer').addEventListener('click', () => {
   if (isTimerRunning) {
     stopTimer();
@@ -893,20 +891,21 @@ document.getElementById('start-stop-timer').addEventListener('click', () => {
   }
 });
 
-  const storedFirstTimestamp = sessionStorage.getItem("firstTimestamp");
-  const storedEndTimestamp = sessionStorage.getItem("endTimestamp");
+// Initialize from session storage
+const storedStartTime = sessionStorage.getItem("timerStartTime");
+const storedEndTime = sessionStorage.getItem("timerEndTime");
 
-  if (storedFirstTimestamp) {
-    firstTimestamp = parseInt(storedFirstTimestamp);
-    document.getElementById('start-time').textContent = new Date(firstTimestamp * 1000).toLocaleTimeString();
-    document.getElementById('start-time').classList.add('start-time-color');
+if (storedStartTime) {
+  timerStartTime = parseInt(storedStartTime);
+  document.getElementById('start-time').textContent = new Date(timerStartTime * 1000).toLocaleTimeString();
+  document.getElementById('start-time').classList.add('start-time-color');
 
-    if (storedEndTimestamp) {
-      const endTimestamp = parseInt(storedEndTimestamp);
-      document.getElementById('end-time').textContent = new Date(endTimestamp * 1000).toLocaleTimeString();
-      document.getElementById('end-time').classList.add('end-time-color');
-    } else {
-      startTimer(); // Resume if no end time is set
-    }
-
-};
+  if (storedEndTime) {
+    timerEndTime = parseInt(storedEndTime);
+    document.getElementById('end-time').textContent = new Date(timerEndTime * 1000).toLocaleTimeString();
+    document.getElementById('end-time').classList.add('end-time-color');
+  } else {
+    // If start time exists but no end time, assume timer was running
+    startTimer();
+  }
+}

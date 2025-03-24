@@ -40,6 +40,7 @@ class ThreadSerial(ThreadBase):
                         self.send_to_frontend(parsed_msg)  
                     except ValueError as e:
                         self.__logger.error(e)
+                        continue
 
             time.sleep(self.__interval)
 
@@ -53,6 +54,7 @@ class ThreadSerial(ThreadBase):
 
                 except ValueError as e:
                     self.__logger.error(e)
+                    continue
 
     def send_to_frontend(self, data):
         """Emit telemetry data to frontend via Flask-SocketIO."""

@@ -464,7 +464,10 @@ window.onload = function () {
       hoverinfo: 'text'
     },
     layout: {
-      title: 'Lidar-Lite-V3',
+      title: {
+        text: 'Lidar-Lite-V3',
+        font: { family: "Rubik, sans-serif" }
+      },
       xaxis: { title: 'Time (seconds)', range: [0, 10] },
       yaxis: { title: 'Distance (cm)' },
       margin: { t: 50, b: 70, l: 70, r: 50 },
@@ -521,7 +524,7 @@ window.onload = function () {
       pad: 40,
       font: { family: "Rubik, sans-serif" },
       showlegend: true,
-      annotations: [] // VOLTAGE DISPLAY
+      annotations: [] 
     },
     config: { responsive: true },
     startTime: null
@@ -904,8 +907,7 @@ if (storedStartTime) {
     timerEndTime = parseInt(storedEndTime);
     document.getElementById('end-time').textContent = new Date(timerEndTime * 1000).toLocaleTimeString();
     document.getElementById('end-time').classList.add('end-time-color');
-  } else {
-    // If start time exists but no end time, assume timer was running
+  } else {        
     startTimer();
   }
 }

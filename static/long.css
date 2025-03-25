@@ -791,6 +791,10 @@ body {
     border: 1px solid var(--border-color);
 }
 
+.first-container:hover, .second-container:hover, .third-container:hover {
+    transform: translateY(-5px);
+}
+
 /* ===== INNER CONTAINERS (MAPS & GRAPHS) ===== */
 #cesiumContainer, #leafletMap, .graph1, .graph2 {
     flex: 1;
@@ -815,12 +819,10 @@ body {
     background-color: var(--panel-color);
 }
 
-/* Override chart.js default styles to match Tesla theme */
 canvas.chartjs-render-monitor {
     filter: invert(0.85) hue-rotate(180deg);
 }
 
-/* Tesla-style timeline animation */
 @keyframes pulse {
     0% { opacity: 0.6; }
     50% { opacity: 1; }

@@ -3,6 +3,8 @@ from collections.abc import Sized
 import re
 from typing import Dict, Any, Optional, List
 
+from datetime import datetime
+
 from .lib_logger import Logger
 
 # DONT FORGET ABOUT ADDING LOG FOR SOME INSUCESSFULLY PARSE
@@ -84,18 +86,37 @@ class Parser:
         data_dict = {}
         index = 0
 
-        for field, length in self.__data_format.items():
-            if length == 1:
-                data_dict[field] = self.__parse_value(data_list[index])
-                index += 1
-            else:
-                data_dict[field] = {
-                    f"{field}{i + 1}": self.__parse_value(data_list[index + i])
-                    for i in range(length)
-                }
-                index += length  
+        # for field, length in self.__data_format.items():
+        #     if length == 1:
+        #         data_dict[field] = self.__parse_value(data_list[index])
+        #         index += 1
+        #     else:
+        #         data_dict[field] = {
+        #             f"{field}{i + 1}": self.__parse_value(data_list[index + i])
+        #             for i in range(length)
+        #         }
+        #         index += length  
 
+        # return data_dict
+
+        for field, length in self.__data_format.items():
+             if length == 1:
+                 if field == "timestamp":
+                     # Do not consume a token for "timestamps" --
+                     # instead, assign the current real time.
+                     data_dict[field] = datetime.now().timestamp()
+                 else:
+                     data_dict[field] = self.__parse_value(data_list[index])
+                     index += 1
+             else:
+                 data_dict[field] = {
+                     f"{field}{i + 1}": self.__parse_value(data_list[index + i])
+                     for i in range(length)
+                 }
+                 index += length  
+ 
         return data_dict
+
     
     def __parse_with_header(self, data: str) -> Dict[str, Any]:
         """
